@@ -16,7 +16,7 @@ def resize_keep_ratio(img, target_size):
     left, right = delta[1] // 2, delta[1] // 2
 
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-    return ratio, img
+    return ratio, img, np.array([left, top])
 
 
 def get_class_and_bbox(xml, ratio=1):

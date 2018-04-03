@@ -17,6 +17,7 @@ def forward(input, training):
         if i == 1:
             feature = x
 
+    # IMG_SIZE // 32
     output.append(slim.conv2d(x, 3 * (4 + 1 + config.NUM_CLASSES), 1, activation_fn=None))
 
     x = tf.keras.layers.UpSampling2D()(feature) + feature_maps[0]
@@ -27,6 +28,7 @@ def forward(input, training):
         if i == 1:
             feature = x
 
+    # IMG_SIZE // 16
     output.append(slim.conv2d(x, 3 * (4 + 1 + config.NUM_CLASSES), 1, activation_fn=None))
 
     x = tf.keras.layers.UpSampling2D()(feature) + feature_maps[1]
@@ -35,6 +37,7 @@ def forward(input, training):
     for i in range(3):
         x = DarkBlock(x, 128, 256, training, False)
 
+    # IMG_SIZE // 8
     output.append(slim.conv2d(x, 3 * (4 + 1 + config.NUM_CLASSES), 1, activation_fn=None))
 
     # TODO: add logistic regression for class labels

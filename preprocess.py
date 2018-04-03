@@ -62,6 +62,9 @@ def kmeans(bboxes, k=9, runs=50):
 
 if __name__ == '__main__':
     i, name2idx, _, bboxes = get_classes_and_bboxes()
-    print(name2idx)
     centers = kmeans(bboxes)
-    print(centers)
+    idxlist = np.argsort(-centers[:, 0] * centers[:, 1])
+    np.save('prior_bboxes', centers[idxlist])
+    # bbox = np.load('prior_bboxes.npy')
+    # print(bbox)
+    # print(centers[idxlist])
