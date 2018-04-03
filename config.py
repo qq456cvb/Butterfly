@@ -1,1 +1,3 @@
 TRAINING = True
+
+IMG_SIZE = 256
