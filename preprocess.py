@@ -9,7 +9,7 @@ import config
 def get_classes_and_bboxes():
     name2idx = {}
     idx2name = {}
-    filenames = glob.glob(os.path.join(config.ROOT_PATH, "Annotations\\*.xml"))
+    filenames = glob.glob(os.path.join(config.ROOT_PATH, "Annotations/*.xml"))
     num_classes = 0
     bboxes = []
     for fn in filenames:

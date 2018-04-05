@@ -9,7 +9,7 @@ def resize_keep_ratio(img, target_size):
     old_size = img.shape[:2]
     ratio = np.amin(target_size / old_size)
     new_size = [int(x * ratio) for x in old_size]
-    img = cv2.resize(img, (new_size[1], new_size[0]))
+    img = cv2.resize(img, (new_size[1], new_size[0]), interpolation=cv2.INTER_AREA)
 
     delta = target_size - np.array(new_size)
     top, bottom = delta[0] // 2, delta[0] // 2
