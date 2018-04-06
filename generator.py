@@ -49,7 +49,7 @@ def data_generator(folder_name, name2idx, prior_bboxes):
             target[base_offset[0], base_offset[1], :, 5:] = np.eye(config.NUM_CLASSES)[cls_idx]
             targets.append(target)
 
-        if not config.DEBUG:
+        if config.DEBUG:
             fig = plt.figure()
             ax = fig.add_subplot(111)
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
