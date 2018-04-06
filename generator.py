@@ -11,16 +11,23 @@ import preprocess
 
 
 # prior bboxes are fed in coarse -> fine order, in unnormalized format
-def data_generator(name2idx, prior_bboxes):
-    img_files = glob.glob(os.path.join(config.ROOT_PATH, "JPEGImages/*.jpg"))
+def data_generator(folder_name, name2idx, prior_bboxes):
+    img_files = glob.glob(os.path.join(config.ROOT_PATH, folder_name, "JPEGImages/*.jpg"))
     while True:
         fn = np.random.choice(img_files)
         img = cv2.imread(fn, cv2.IMREAD_COLOR)
         ratio, img, bbox_offset = utils.resize_keep_ratio(img, config.IMG_SIZE)
-        xml = os.path.join(config.ROOT_PATH, "Annotations/%s.xml" % fn.split('/')[-1].split('.')[0])
+        xml = os.path.join(config.ROOT_PATH, folder_name, "Annotations/%s.xml" % fn.split('/')[-1].split('.')[0])
         cls_name, bbox_resized = utils.get_class_and_bbox(xml, ratio)
         bbox_resized[:2] += bbox_offset
         bbox_resized[2:] += bbox_offset
+
+        # random horizontal flip
+        # TODO: add random crop
+        if np.random.rand() < 0.5:
+            img = img[:, ::-1, :]
+            bbox_resized[::2] = config.IMG_SIZE - bbox_resized[::2] - 1
+            bbox_resized[::2] = bbox_resized[2::-2]
         cls_idx = name2idx[cls_name]
         bbox_size_normalized = np.array([(bbox_resized[2] - bbox_resized[0]) / config.IMG_SIZE, (bbox_resized[3] - bbox_resized[1]) / config.IMG_SIZE])
         bbox_center_normalized = np.array([(bbox_resized[0] + bbox_resized[2]) / 2 / config.IMG_SIZE, (bbox_resized[1] + bbox_resized[3]) / 2 / config.IMG_SIZE])
@@ -42,7 +49,7 @@ def data_generator(name2idx, prior_bboxes):
             target[base_offset[0], base_offset[1], :, 5:] = np.eye(config.NUM_CLASSES)[cls_idx]
             targets.append(target)
 
-        if config.DEBUG:
+        if not config.DEBUG:
             fig = plt.figure()
             ax = fig.add_subplot(111)
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
