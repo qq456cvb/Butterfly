@@ -23,10 +23,10 @@ def yolo_model_fn(features, labels, mode, params):
         train_op = optimizer.minimize(loss, global_step=global_step)
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
     elif mode == tf.estimator.ModeKeys.PREDICT:
-        pred_bboxes = YOLO.get_pred_bbox(preds, tf.convert_to_tensor(params['prior_bboxes']))
+        pred_bboxes, pred_classes = YOLO.get_pred_bbox(preds, tf.convert_to_tensor(params['prior_bboxes'], dtype=tf.float32))
         predictions = {
-            'pred_bbox': pred_bboxes[:, :4],
-            'pred_class': pred_bboxes[:, 4]
+            'pred_bbox': pred_bboxes,
+            'pred_class': pred_classes
         }
         return tf.estimator.EstimatorSpec(mode, predictions=predictions)
     else:
@@ -47,7 +47,7 @@ def get_input_fn(name2idx, prior_bboxes, path, batch_size=16):
     next_batch = dataset.make_one_shot_iterator().get_next()
     return next_batch[0], next_batch[1:]
 
-
+import config
 if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
     classes, name2idx, idx2name, _ = preprocess.get_classes_and_bboxes()
@@ -76,7 +76,7 @@ if __name__ == '__main__':
             "loss": "loss",
         }, every_n_iter=100)
 
-    preds = estimator.predict(input_fn=eval_inputs)
+    # preds = estimator.predict(input_fn=eval_inputs)
     for i in range(args.epochs):
         estimator.train(input_fn=train_inputs, steps=1e3, hooks=[logging_hook])
         estimator.evaluate(input_fn=eval_inputs, steps=1e2, hooks=[logging_hook])

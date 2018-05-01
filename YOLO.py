@@ -75,6 +75,7 @@ def loss(preds, targets):
 def get_pred_bbox(preds, prior_bboxes):
     scales = [32, 16, 8]
     bboxes = []
+    classes = []
     for i in range(3):
         N = config.IMG_SIZE // scales[i]
         pred = preds[i]
@@ -85,17 +86,21 @@ def get_pred_bbox(preds, prior_bboxes):
         valid_pred = tf.gather_nd(pred, valid_idx)
         # three bbox in each level
         bboxes_level = []
+        classes_level = []
         for j in range(3):
             bbox_idx = tf.where(tf.equal(valid_idx[:, 3], j))
-            bbox_pred = tf.gather(valid_pred, bbox_idx)
-            bbox_lt = (bbox_idx[:, 1:3] + tf.sigmoid(bbox_pred[:, :2])) / N
-            bbox_br = bbox_lt + prior_bboxes[i * 3 + j] / config.IMG_SIZE * tf.exp(bbox_pred[:, 2:4])
-            bbox_cls = tf.argmax(tf.sigmoid(bbox_pred[:, 5:]), axis=1, keep_dims=True)
-            bboxes_level.append(tf.concat([bbox_lt, bbox_br, bbox_cls], axis=1))
+            valid_bbox_idx = tf.gather_nd(valid_idx, bbox_idx)
+            bbox_pred = tf.gather_nd(valid_pred, bbox_idx)
+            bbox_lt = (tf.cast(valid_bbox_idx[:, 1:3], tf.float32) + tf.sigmoid(bbox_pred[:, :2])) / N
+            bbox_br = bbox_lt + prior_bboxes[i * 3 + j:i * 3 + j + 1, :] / config.IMG_SIZE * tf.exp(bbox_pred[:, 2:4])
+            bbox_cls = tf.expand_dims(tf.argmax(tf.sigmoid(bbox_pred[:, 5:]), axis=1), -1)
+            bboxes_level.append(tf.concat([bbox_lt, bbox_br], axis=1))
+            classes_level.append(bbox_cls)
         bboxes_level = tf.concat(bboxes_level, axis=0)
+        classes_level = tf.concat(classes_level, axis=0)
         bboxes.append(bboxes_level)
-    bboxes = tf.concat(bboxes, axis=0)
-    return bboxes
+        classes.append(classes_level)
+    return tf.concat(bboxes, axis=0), tf.squeeze(tf.concat(classes, axis=0), axis=-1)
 
     # # nms
     # selected_indices = tf.image.non_max_suppression(bboxes[:, :4], bboxes[:, 4], tf.constant(10, dtype=tf.int32))
