@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import glob
 import os
+import sys
+from shutil import copyfile
 from xml.dom import minidom
 import config
 
@@ -60,11 +62,29 @@ def kmeans(bboxes, k=9, runs=50):
     return best_centers
 
 
+def split_train_val(train_ratio=0.9):
+    print('checking directories...')
+    for dir in ['train', 'train/Annotations', 'train/JPEGImages', 'val', 'val/Annotations', 'val/JPEGImages']:
+        if not os.path.exists(os.path.join(config.ROOT_PATH, dir)):
+            os.makedirs(os.path.join(config.ROOT_PATH, dir))
+    filenames = glob.glob(os.path.join(config.ROOT_PATH, "Annotations/*.xml"))
+    np.random.shuffle(filenames)
+    for fn in filenames[:int(len(filenames) * 0.9)]:
+        raw_name = fn.split('\\' if os.name == 'nt' else '/')[-1].split('.')[0]
+        copyfile(os.path.join(config.ROOT_PATH, 'Annotations', raw_name + '.xml'), os.path.join(config.ROOT_PATH, 'train/Annotations', raw_name + '.xml'))
+        copyfile(os.path.join(config.ROOT_PATH, 'JPEGImages', raw_name + '.jpg'), os.path.join(config.ROOT_PATH, 'train/JPEGImages', raw_name + '.jpg'))
+    for fn in filenames[int(len(filenames) * 0.9):]:
+        raw_name = fn.split('\\' if os.name == 'nt' else '/')[-1].split('.')[0]
+        copyfile(os.path.join(config.ROOT_PATH, 'Annotations', raw_name + '.xml'), os.path.join(config.ROOT_PATH, 'val/Annotations', raw_name + '.xml'))
+        copyfile(os.path.join(config.ROOT_PATH, 'JPEGImages', raw_name + '.jpg'), os.path.join(config.ROOT_PATH, 'val/JPEGImages', raw_name + '.jpg'))
+
+
 if __name__ == '__main__':
-    i, name2idx, _, bboxes = get_classes_and_bboxes()
-    centers = kmeans(bboxes)
-    idxlist = np.argsort(-centers[:, 0] * centers[:, 1])
-    np.save('prior_bboxes', centers[idxlist])
+    split_train_val()
+    # i, name2idx, _, bboxes = get_classes_and_bboxes()
+    # centers = kmeans(bboxes)
+    # idxlist = np.argsort(-centers[:, 0] * centers[:, 1])
+    # np.save('prior_bboxes', centers[idxlist])
     # bbox = np.load('prior_bboxes.npy')
     # print(bbox)
     # print(centers[idxlist])

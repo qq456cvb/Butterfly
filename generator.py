@@ -17,7 +17,7 @@ def data_generator(folder_name, name2idx, prior_bboxes):
         fn = np.random.choice(img_files)
         img = cv2.imread(fn, cv2.IMREAD_COLOR)
         ratio, img, bbox_offset = utils.resize_keep_ratio(img, config.IMG_SIZE)
-        xml = os.path.join(config.ROOT_PATH, folder_name, "Annotations/%s.xml" % fn.split('/')[-1].split('.')[0])
+        xml = os.path.join(config.ROOT_PATH, folder_name, "Annotations/%s.xml" % fn.split('\\' if os.name == 'nt' else '/')[-1].split('.')[0])
         cls_name, bbox_resized = utils.get_class_and_bbox(xml, ratio)
         bbox_resized[:2] += bbox_offset
         bbox_resized[2:] += bbox_offset
@@ -44,7 +44,7 @@ def data_generator(folder_name, name2idx, prior_bboxes):
             pos_delta = bbox_center_normalized * N - base_offset
             size_delta = np.log(bbox_size_normalized / (prior_bboxes[i*3:i*3+3] / config.IMG_SIZE))
 
-            # size delta comes first
+            # position delta comes first
             target[base_offset[0], base_offset[1], :, :4] = np.concatenate([np.tile(pos_delta[np.newaxis, :], (3, 1)), size_delta], axis=1)
             target[base_offset[0], base_offset[1], :, 5:] = np.eye(config.NUM_CLASSES)[cls_idx]
             targets.append(target)
@@ -65,12 +65,16 @@ def data_generator(folder_name, name2idx, prior_bboxes):
                 )
             )
             plt.show()
+        assert img.shape[0] == 256 and img.shape[1] == 256
         yield img, targets[0], targets[1], targets[2]
 
 
 if __name__ == '__main__':
     classes, name2idx, _, _ = preprocess.get_classes_and_bboxes()
     prior_bboxes = np.load('prior_bboxes.npy')
-    gen = data_generator(name2idx, prior_bboxes)
+    gen = data_generator('train', name2idx, prior_bboxes)
     for _ in range(3):
-        next(gen)
+        batch = next(gen)
+        for b in batch:
+            print(b.shape)
+        # print(next(gen)[0].shape)
